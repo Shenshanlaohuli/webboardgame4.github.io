@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SudokuMoyo 数独阵地对决 - 可爱版</title>
+    <!-- 引入圆润可爱的字体 Nunito 和 站酷快乐体(适合中文卡通) -->
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800;900&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #fff9e6; /* 奶油黄背景 */
+            --text-color: #5d4037; /* 巧克力色文字 */
+            
+            /* 玩家颜色 - 糖果色系 */
+            --red-main: #ff8fa3; /* 草莓粉 */
+            --red-dark: #ff6b85;
+            --red-bg: #fff0f3;
+
+            --blue-main: #8ecae6; /* 天空蓝 */
+            --blue-dark: #6ab7d6;
+            --blue-bg: #eaf6ff;
+
+            --grey-main: #e0e0e0;
+            --grey-bg: #fcfcfc;
+
+            --board-border-thick: #5d4037; /* 区域粗边框(巧克力色) */
+            --board-border-thin: #e0cfc0;  /* 内部细边框(奶茶色) */
+        }
+
+        body {
+            font-family: 'Nunito', 'ZCOOL KuaiLe', sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#e6dbba 2px, transparent 2px);
+            background-size: 30px 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            color: var(--text-color);
+            user-select: none;
+        }
+
+        /* --- 标题设计 --- */
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 { 
+            margin: 0;
+            font-family: 'Nunito', sans-serif;
+            font-size: 3rem;
+            font-weight: 900;
+            line-height: 1;
+            /* 彩虹渐变字 */
+            background: linear-gradient(to bottom right, #ff8fa3, #8ecae6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            /* 描边效果模拟 */
+            filter: drop-shadow(3px 3px 0px #fff);
+            position: relative;
+        }
+        
+        .subtitle {
+            display: block;
+            font-family: 'ZCOOL KuaiLe', cursive;
+            font-size: 1.5rem;
+            color: var(--text-color);
+            margin-top: 5px;
+            text-shadow: 2px 2px 0px rgba(255,255,255,0.8);
+        }
+
+        /* --- 菜单界面 --- */
+        #start-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-top: 30px;
+            align-items: center;
+            width: 100%;
+        }
+
+        .menu-btn {
+            padding: 15px 0;
+            width: 260px;
+            font-size: 1.4em;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 800;
+            font-family: 'ZCOOL KuaiLe', sans-serif; /* 中文卡通字体 */
+            color: #fff;
+            transition: transform 0.1s;
+            position: relative;
+            box-shadow: 0 6px 0 rgba(0,0,0,0.1);
+        }
+
+        .btn-pve { 
+            background-color: var(--blue-main); 
+            box-shadow: 0 6px 0 var(--blue-dark);
+        }
+        .btn-pve:active { 
+            transform: translateY(6px); 
+            box-shadow: 0 0 0 var(--blue-dark);
+        }
+
+        .btn-pvp { 
+            background-color: var(--red-main); 
+            box-shadow: 0 6px 0 var(--red-dark);
+        }
+        .btn-pvp:active { 
+            transform: translateY(6px); 
+            box-shadow: 0 0 0 var(--red-dark);
+        }
+
+        .rules-box {
+            background: #fff;
+            padding: 25px;
+            border-radius: 20px;
+            border: 3px solid var(--board-border-thick);
+            color: var(--text-color);
+            font-size: 1.1em;
+            max-width: 320px;
+            text-align: center;
+            box-shadow: 6px 6px 0 rgba(0,0,0,0.1);
+            line-height: 1.6;
+            font-weight: 700;
+            font-family: 'ZCOOL KuaiLe', sans-serif;
+        }
+
+        /* --- 游戏界面 --- */
+        #game-ui {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        #status-bar {
+            margin-bottom: 15px;
+            padding: 12px 25px;
+            background: #fff;
+            border: 3px solid var(--board-border-thick);
+            border-radius: 15px;
+            text-align: center;
+            font-weight: 800;
+            font-size: 1.1em;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.1);
+        }
+
+        #warning-msg {
+            height: 30px;
+            margin-bottom: 10px;
+            color: #ff6b6b;
+            font-weight: 800;
+            font-size: 1em;
+            text-align: center;
+            width: 100%;
+            background: rgba(255,255,255,0.6);
+            line-height: 30px;
+            border-radius: 10px;
+        }
+
+        .text-red { color: var(--red-dark); }
+        .text-blue { color: var(--blue-dark); }
+
+        /* --- 棋盘样式 (修改版) --- */
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(9, 42px);
+            grid-template-rows: repeat(9, 42px);
+            gap: 0; /* 移除间隙，使用边框控制 */
+            background-color: #fff;
+            /* 外围最粗边框 */
+            border: 4px solid var(--board-border-thick); 
+            border-radius: 8px; 
+            margin-bottom: 20px;
+            box-shadow: 0 10px 20px rgba(93, 64, 55, 0.15);
+        }
+
+        .cell {
+            width: 42px;
+            height: 42px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 22px;
+            font-weight: 800;
+            cursor: pointer;
+            background-color: #fff;
+            position: relative;
+            box-sizing: border-box; /* 确保边框算在宽度内 */
+            
+            /* 默认内部细边框 */
+            border-right: 1px solid var(--board-border-thin);
+            border-bottom: 1px solid var(--board-border-thin);
+        }
+
+        /* 区域粗边框逻辑：覆盖细边框 */
+        .cell.thick-right { border-right: 3px solid var(--board-border-thick); }
+        .cell.thick-bottom { border-bottom: 3px solid var(--board-border-thick); }
+
+        /* 移除最后一列和最后一行的多余边框(可选，但有了外框其实不影响) */
+        /* 这里的逻辑是：最右侧和最下侧由容器的border控制，cell只需处理内部 */
+
+        /* 区域背景色 */
+        .zone-red { background-color: var(--red-bg); }
+        .zone-blue { background-color: var(--blue-bg); }
+        .zone-grey { background-color: var(--grey-bg); }
+
+        .cell:hover:not(.taken):not(.x-mark) {
+            filter: brightness(0.95);
+            background-color: rgba(0,0,0,0.05);
+        }
+
+        /* 数字填入动画 */
+        .cell.taken { 
+            cursor: default; 
+            color: var(--text-color);
+            animation: jelly 0.5s;
+        }
+
+        @keyframes jelly {
+            0% { transform: scale(0); }
+            25% { transform: scale(1.2); }
+            50% { transform: scale(0.9); }
+            75% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .cell.taken[data-zone-color="red"] { color: #d6455d; }
+        .cell.taken[data-zone-color="blue"] { color: #4a90e2; }
+
+        .cell.x-mark { 
+            color: #ff6b6b; 
+            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+            font-size: 26px; 
+            cursor: not-allowed; 
+            opacity: 0.7;
+        }
+        
+        /* 控制按钮 */
+        #controls {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 500px;
+        }
+
+        .num-btn {
+            width: 45px;
+            height: 45px;
+            border: none;
+            border-radius: 12px;
+            font-size: 20px;
+            font-weight: 800;
+            cursor: pointer;
+            background: #fff;
+            color: var(--text-color);
+            box-shadow: 0 4px 0 #ddd;
+            transition: all 0.1s;
+            font-family: 'Nunito', sans-serif;
+        }
+
+        .num-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #ddd;
+        }
+
+        .num-btn.theme-red {
+            border: 2px solid var(--red-main);
+            color: var(--red-dark);
+        }
+        .num-btn.theme-red:hover, .num-btn.theme-red.selected {
+            background: var(--red-main);
+            color: #fff;
+            box-shadow: 0 4px 0 var(--red-dark);
+            border-color: var(--red-dark);
+        }
+
+        .num-btn.theme-blue {
+            border: 2px solid var(--blue-main);
+            color: var(--blue-dark);
+        }
+        .num-btn.theme-blue:hover, .num-btn.theme-blue.selected {
+            background: var(--blue-main);
+            color: #fff;
+            box-shadow: 0 4px 0 var(--blue-dark);
+            border-color: var(--blue-dark);
+        }
+
+        .num-btn.selected {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 rgba(0,0,0,0.2);
+        }
+
+        #log {
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #888;
+            max-height: 80px;
+            overflow-y: auto;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            background: #fff;
+            padding: 10px;
+            border-radius: 10px;
+            border: 2px dashed #ccc;
+        }
+
+        #back-btn {
+            margin-top: 25px;
+            padding: 10px 25px;
+            background-color: #fff;
+            color: #888;
+            border: 2px solid #ccc;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 800;
+            transition: 0.2s;
+            font-family: 'ZCOOL KuaiLe', sans-serif;
+        }
+        #back-btn:hover { 
+            background-color: #f0f0f0;
+            color: #555;
+            border-color: #bbb;
+        }
+
+        ::-webkit-scrollbar { width: 0px; }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>SudokuMoyo</h1>
+        <span class="subtitle">数独阵地对决</span>
+    </header>
+
+    <!-- 开始菜单 -->
+    <div id="start-menu">
+        <button class="menu-btn btn-pve" onclick="startGame('pve')">👤 人机对战</button>
+        <button class="menu-btn btn-pvp" onclick="startGame('pvp')">👥 双人对战</button>
+        <div class="rules-box">
+            <div style="font-size:1.2em; margin-bottom:10px;">📖 游戏规则</div>
+            <span style="color:var(--text-color); opacity:0.7;">阶段一：</span> 抢占中间的灰色E区<br>
+            <span style="color:var(--text-color); opacity:0.7;">阶段二：</span> 只能填自己的颜色区域<br>
+            <br>
+            ❌ 没地方填就算输啦！
+        </div>
+    </div>
+
+    <!-- 游戏主界面 -->
+    <div id="game-ui">
+        <div id="status-bar">正在准备棋盘...</div>
+        <div id="warning-msg"></div>
+
+        <div id="game-board"></div>
+
+        <div id="controls">
+            <button class="num-btn" onclick="selectNumber(1)">1</button>
+            <button class="num-btn" onclick="selectNumber(2)">2</button>
+            <button class="num-btn" onclick="selectNumber(3)">3</button>
+            <button class="num-btn" onclick="selectNumber(4)">4</button>
+            <button class="num-btn" onclick="selectNumber(5)">5</button>
+            <button class="num-btn" onclick="selectNumber(6)">6</button>
+            <button class="num-btn" onclick="selectNumber(7)">7</button>
+            <button class="num-btn" onclick="selectNumber(8)">8</button>
+            <button class="num-btn" onclick="selectNumber(9)">9</button>
+        </div>
+
+        <div id="log"></div>
+
+        <button id="back-btn" onclick="showMenu()">返回主菜单</button>
+    </div>
+
+<script>
+    // --- 游戏配置与状态 ---
+    const ZONE_MAP = {
+        'A': {r:0, c:0}, 'B': {r:0, c:3}, 'C': {r:0, c:6},
+        'D': {r:3, c:0}, 'E': {r:3, c:3}, 'F': {r:3, c:6},
+        'G': {r:6, c:0}, 'H': {r:6, c:3}, 'I': {r:6, c:6}
+    };
+
+    const RED_ZONES = ['A', 'C', 'D', 'H'];
+    const BLUE_ZONES = ['B', 'F', 'G', 'I'];
+    
+    let board = []; 
+    let gameMode = 'pve'; 
+    let turnColor = 'red'; 
+    let myPlayerColor = ''; 
+    let currentPhase = 1; 
+    let selectedNum = null;
+    let gameOver = false;
+
+    function showMenu() {
+        document.getElementById('start-menu').style.display = 'flex';
+        document.getElementById('game-ui').style.display = 'none';
+        document.getElementById('warning-msg').innerText = "";
+    }
+
+    function startGame(mode) {
+        gameMode = mode;
+        document.getElementById('start-menu').style.display = 'none';
+        document.getElementById('game-ui').style.display = 'flex';
+        initGame();
+    }
+
+    function initGame() {
+        board = Array(81).fill(0);
+        gameOver = false;
+        currentPhase = 1;
+        selectedNum = null;
+        document.getElementById('log').innerHTML = "✨ 游戏开始啦！";
+        clearWarning();
+
+        turnColor = Math.random() > 0.5 ? 'red' : 'blue';
+
+        if (gameMode === 'pve') {
+            myPlayerColor = Math.random() > 0.5 ? 'red' : 'blue';
+            let playerText = myPlayerColor==='red' ? '红方' : '蓝方';
+            let cssClass = myPlayerColor==='red' ? 'text-red' : 'text-blue';
+            log(`模式：人机对战。你是 <span class="${cssClass}"><b>${playerText}</b></span>`);
+        } else {
+            log("模式：双人对战。");
+        }
+
+        fillInitialBoard();
+        renderBoard();
+        updateXMarks();
+        updateUIState();
+        checkCpuMove();
+    }
+
+    function checkCpuMove() {
+        if (gameOver) return;
+        if (gameMode === 'pve' && turnColor !== myPlayerColor) {
+            setTimeout(cpuMove, 1000); 
+        }
+    }
+
+    function getZoneId(r, c) {
+        let zr = Math.floor(r / 3);
+        let zc = Math.floor(c / 3);
+        const zones = [['A', 'B', 'C'], ['D', 'E', 'F'], ['G', 'H', 'I']];
+        return zones[zr][zc];
+    }
+
+    function getZoneColorClass(zoneId) {
+        if (RED_ZONES.includes(zoneId)) return 'zone-red';
+        if (BLUE_ZONES.includes(zoneId)) return 'zone-blue';
+        return 'zone-grey';
+    }
+    
+    function getZoneLogicColor(zoneId) {
+        if (RED_ZONES.includes(zoneId)) return 'red';
+        if (BLUE_ZONES.includes(zoneId)) return 'blue';
+        return 'grey';
+    }
+
+    function isValidMove(r, c, num, currentBoard) {
+        for (let i = 0; i < 9; i++) { if (currentBoard[r * 9 + i] === num) return false; }
+        for (let i = 0; i < 9; i++) { if (currentBoard[i * 9 + c] === num) return false; }
+        let startR = Math.floor(r / 3) * 3;
+        let startC = Math.floor(c / 3) * 3;
+        for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 3; j++) {
+                if (currentBoard[(startR + i) * 9 + (startC + j)] === num) return false;
+            }
+        }
+        return true;
+    }
+
+    function fillInitialBoard() {
+        function fillZone(zones, min, max) {
+            zones.forEach(z => {
+                let count = Math.floor(Math.random() * (max - min + 1)) + min;
+                let filled = 0; let attempts = 0;
+                let startR = ZONE_MAP[z].r; let startC = ZONE_MAP[z].c;
+                while (filled < count && attempts < 100) {
+                    attempts++;
+                    let rr = startR + Math.floor(Math.random() * 3);
+                    let cc = startC + Math.floor(Math.random() * 3);
+                    let idx = rr * 9 + cc;
+                    if (board[idx] === 0) {
+                        let nums = [1,2,3,4,5,6,7,8,9].sort(() => Math.random() - 0.5);
+                        for (let n of nums) {
+                            if (isValidMove(rr, cc, n, board)) {
+                                board[idx] = n; filled++; break;
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        fillZone(['E'], 2, 5);
+        fillZone(RED_ZONES, 2, 4);
+        fillZone(BLUE_ZONES, 2, 4);
+    }
+
+    function updateXMarks() {
+        let changed = false;
+        for (let i = 0; i < 81; i++) {
+            if (board[i] === 0) {
+                let r = Math.floor(i / 9); let c = i % 9;
+                let canFill = false;
+                for (let n = 1; n <= 9; n++) {
+                    if (isValidMove(r, c, n, board)) { canFill = true; break; }
+                }
+                if (!canFill) {
+                    board[i] = -1; changed = true;
+                    let cell = document.querySelector(`.cell[data-idx='${i}']`);
+                    if (cell) { cell.innerText = '×'; cell.classList.add('x-mark'); }
+                }
+            }
+        }
+        return changed;
+    }
+
+    function checkPhase() {
+        if (currentPhase === 1) {
+            let startR = 3, startC = 3;
+            let eFull = true;
+            for(let i=0; i<3; i++){
+                for(let j=0; j<3; j++){
+                    if(board[(startR+i)*9 + (startC+j)] === 0) { eFull = false; break; }
+                }
+            }
+            if (eFull) {
+                currentPhase = 2;
+                log("🎉 阶段一结束！进入防守阶段。");
+                showWarning("进入阶段二：防守自己的阵地！");
+            }
+        }
+    }
+
+    function hasValidMove(who) {
+        for (let r = 0; r < 9; r++) {
+            for (let c = 0; c < 9; c++) {
+                if (board[r * 9 + c] !== 0) continue;
+                let zone = getZoneId(r, c);
+                if (currentPhase === 1) {
+                    if (zone !== 'E') continue;
+                } else {
+                    if (who === 'red' && !RED_ZONES.includes(zone)) continue;
+                    if (who === 'blue' && !BLUE_ZONES.includes(zone)) continue;
+                }
+                for (let n = 1; n <= 9; n++) {
+                    if (isValidMove(r, c, n, board)) return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    function renderBoard() {
+        const container = document.getElementById('game-board');
+        container.innerHTML = '';
+        for (let r = 0; r < 9; r++) {
+            for (let c = 0; c < 9; c++) {
+                let idx = r * 9 + c;
+                let div = document.createElement('div');
+                let zoneId = getZoneId(r, c);
+                div.className = `cell ${getZoneColorClass(zoneId)}`;
+                
+                // 粗边框逻辑 - 清晰划分9大区域
+                // 每3列的右边加粗 (除了最后一列)
+                if ((c + 1) % 3 === 0 && c < 8) div.classList.add('thick-right');
+                // 每3行的下边加粗 (除了最后一行)
+                if ((r + 1) % 3 === 0 && r < 8) div.classList.add('thick-bottom');
+
+                div.dataset.r = r; div.dataset.c = c; div.dataset.idx = idx;
+                div.onclick = () => handleCellClick(r, c);
+                
+                if (board[idx] > 0) { 
+                    div.innerText = board[idx]; 
+                    div.classList.add('taken'); 
+                    div.dataset.zoneColor = getZoneLogicColor(zoneId);
+                }
+                else if (board[idx] === -1) { div.innerText = '×'; div.classList.add('x-mark'); }
+                
+                container.appendChild(div);
+            }
+        }
+    }
+
+    function selectNumber(n) {
+        if (gameOver) return;
+        if (gameMode === 'pve' && turnColor !== myPlayerColor) return;
+
+        selectedNum = n;
+        clearWarning();
+        updateButtonStyles();
+    }
+
+    function updateButtonStyles() {
+        let btns = document.querySelectorAll('.num-btn');
+        let themeClass = turnColor === 'red' ? 'theme-red' : 'theme-blue';
+
+        btns.forEach((b, i) => {
+            b.className = 'num-btn';
+            b.classList.add(themeClass);
+            if ((i + 1) === selectedNum) {
+                b.classList.add('selected');
+            }
+        });
+    }
+
+    function updateStatus() {
+        let sb = document.getElementById('status-bar');
+        let phaseText = currentPhase === 1 ? "争夺中间(E)" : "保卫阵地";
+        let turnName = turnColor === 'red' ? "红方" : "蓝方";
+        let colorClass = turnColor === 'red' ? "text-red" : "text-blue";
+        
+        let statusText = "";
+        
+        if (gameMode === 'pve') {
+            if (turnColor === myPlayerColor) {
+                statusText = `<span class="${colorClass}">轮到你啦 (${turnName})</span>`;
+            } else {
+                statusText = `<span class="${colorClass}" style="opacity:0.7">电脑思考中 (${turnName})...</span>`;
+            }
+        } else {
+            statusText = `<span class="${colorClass}">玩家 ${turnName} 回合</span>`;
+        }
+
+        sb.innerHTML = `阶段: ${phaseText} | ${statusText}`;
+    }
+
+    function updateUIState() {
+        updateStatus();
+        updateButtonStyles();
+    }
+
+    function handleCellClick(r, c) {
+        clearWarning();
+        if (gameOver) return;
+        
+        if (gameMode === 'pve' && turnColor !== myPlayerColor) {
+            showWarning("嘘... 电脑正在思考呢");
+            return;
+        }
+
+        if (board[r*9+c] !== 0) { showWarning("这个格子已经被占啦"); return; }
+        if (!selectedNum) { showWarning("先选一个数字吧！"); return; }
+
+        let zone = getZoneId(r, c);
+        if (currentPhase === 1) {
+            if (zone !== 'E') { showWarning("阶段一只能填中间的 E 区哦"); return; }
+        } else {
+            let allowed = turnColor === 'red' ? RED_ZONES : BLUE_ZONES;
+            if (!allowed.includes(zone)) {
+                let colorName = turnColor === 'red' ? '红方' : '蓝方';
+                showWarning(`只能填自己的 ${colorName} 区域哦`);
+                return;
+            }
+        }
+
+        if (!isValidMove(r, c, selectedNum, board)) {
+            showWarning(`哎呀，数字 ${selectedNum} 冲突啦！`);
+            return;
+        }
+
+        makeMove(r, c, selectedNum);
+    }
+
+    function makeMove(r, c, num) {
+        board[r*9+c] = num;
+        
+        let cell = document.querySelector(`.cell[data-idx='${r*9+c}']`);
+        cell.innerText = num;
+        cell.classList.add('taken');
+        cell.dataset.zoneColor = getZoneLogicColor(getZoneId(r, c));
+
+        selectedNum = null;
+        updateXMarks();
+        checkPhase();
+
+        turnColor = turnColor === 'red' ? 'blue' : 'red';
+        
+        if (!hasValidMove(turnColor)) {
+            let winner = turnColor === 'red' ? 'blue' : 'red'; 
+            endGame(winner);
+            return;
+        }
+
+        updateUIState();
+        checkCpuMove();
+    }
+
+    function cpuMove() {
+        if (gameOver) return;
+
+        let moves = [];
+        for (let r = 0; r < 9; r++) {
+            for (let c = 0; c < 9; c++) {
+                if (board[r*9+c] !== 0) continue;
+                let zone = getZoneId(r, c);
+
+                if (currentPhase === 1) {
+                    if (zone !== 'E') continue;
+                } else {
+                    let allowed = turnColor === 'red' ? RED_ZONES : BLUE_ZONES;
+                    if (!allowed.includes(zone)) continue;
+                }
+
+                for (let n = 1; n <= 9; n++) {
+                    if (isValidMove(r, c, n, board)) moves.push({r,c,n});
+                }
+            }
+        }
+
+        if (moves.length === 0) {
+            endGame(turnColor === 'red' ? 'blue' : 'red');
+            return;
+        }
+
+        let m = moves[Math.floor(Math.random() * moves.length)];
+        makeMove(m.r, m.c, m.n);
+    }
+
+    function endGame(winnerColor) {
+        gameOver = true;
+        let sb = document.getElementById('status-bar');
+        let winText = winnerColor === 'red' ? "红方" : "蓝方";
+        let colorClass = winnerColor === 'red' ? "text-red" : "text-blue";
+
+        let msg = "";
+        if (gameMode === 'pve') {
+            if (winnerColor === myPlayerColor) {
+                msg = `<span style="color:#4caf50;">🎉 恭喜！你赢啦！</span>`;
+            } else {
+                msg = `<span style="color:#ff6b6b;">🤖 哎呀，你输啦！</span>`;
+            }
+        } else {
+            msg = `<span class="${colorClass}">🏆 ${winText} 胜利！</span>`;
+        }
+        
+        sb.innerHTML = msg;
+        document.querySelectorAll('.num-btn').forEach(b => b.classList.remove('selected'));
+    }
+
+    function showWarning(msg) { 
+        let el = document.getElementById('warning-msg');
+        el.innerText = msg;
+    }
+    function clearWarning() { document.getElementById('warning-msg').innerText = ""; }
+    function log(msg) { 
+        let l = document.getElementById('log'); 
+        l.innerHTML = `<div>${msg}</div>` + l.innerHTML; 
+    }
+
+</script>
+
+</body>
+</html>
